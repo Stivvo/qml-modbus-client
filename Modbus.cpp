@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <stdio.h>
 
 Modbus::Modbus() {
   content = "";
@@ -11,16 +12,19 @@ Modbus::Modbus() {
 void Modbus::startConnection() {
   client = new QModbusRtuSerialMaster();
 
-  client->setConnectionParameter(QModbusDevice::SerialPortNameParameter,
-                                 "/dev/pts/2");
 
   std::ifstream inTino;
-  inTino.open("/home/fsl/.tino/clientPort.txt");
+  std::string home = std::getenv("HOME");
+  inTino.open(home + "/.tino/clientPort.txt");
   std::string portnameString;
   getline(inTino, portnameString);
+
   QString qportnameString = QString::fromStdString(portnameString);
   client->setConnectionParameter(QModbusDevice::SerialPortNameParameter,
                                  qportnameString);
+
+//  client->setConnectionParameter(QModbusDevice::SerialPortNameParameter,
+//                                 "/dev/pts/2");
 
   client->setConnectionParameter(QModbusDevice::SerialParityParameter,
                                  QSerialPort::NoParity);
@@ -56,7 +60,7 @@ void Modbus::startReading() {
 
 void Modbus::query() {
   QModbusDataUnit readUnit(QModbusDataUnit::HoldingRegisters, startAddress,
-                           nBytes);
+                           static_cast<unsigned short>(nBytes));
 
   if (auto *reply = client->sendReadRequest(readUnit, 1)) {
     if (!reply->isFinished())
